@@ -62,6 +62,7 @@ class l1b(initL1b):
         :param eq_mult: Gain factor, adimensional
         :return: TOA in DN, equalized
         """
+        toa = (toa - eq_add)/eq_mult
         #TODO
         return toa
 
@@ -72,6 +73,7 @@ class l1b(initL1b):
         :param gain: gain in [rad/DN]
         :return: TOA in radiances [mW/sr/m2]
         """
+        toa = toa * gain
         #TODO
         self.logger.debug('Sanity check. TOA in radiances after gain application ' + str(toa[1,-1]) + ' [mW/m2/sr]')
 
