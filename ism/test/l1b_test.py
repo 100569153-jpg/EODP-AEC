@@ -1,5 +1,5 @@
 
-#FRIST CROSS VALIDATE L1B OUTPUTS EQUALIZED WITH TEACHER RESULTS
+#FIRST CROSS VALIDATE L1B OUTPUTS EQUALIZED WITH TEACHER RESULTS
 #PLOT FROM YOUR OUTPUTS THE EQUALISED OUPUT VERSUS NOT EQUALISED VERSUS THE TRUTH (LIKE FIGURE 8.3)
 #TRUTH = EODP-TS-L1B\input\ism_toa_isrf_VNIR-0.nc
 #THIRD EXPLAIN WHAT DO WE SEE IN THE PLOT (TO THE REPORT)
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # Directory Configurations
 # =========================================================================
 dir_equalized = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\output_AEC_equalized"
-dir_no_equalized = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\output_AEC"
+dir_no_equalized = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\output_AEC_no_equalized"
 dir_truth = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\input"
 
 bands = [0, 1, 2, 3]
