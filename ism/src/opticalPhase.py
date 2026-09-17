@@ -122,7 +122,7 @@ class opticalPhase(initIsm):
         toa = np.zeros((sgm_toa.shape[0], sgm_toa.shape[1]))
 
         #1. normalize isrf
-        isrf_f = isrf / area    # sum of isrf_f should be eq to 1
+        isrf_f = isrf / np.sum(isrf)    # sum of isrf_f should be eq to 1
 
         #2. convert ISRF wavelengths to nanometers x1000
         wv_isrf_nm = wv_isrf * 1000
@@ -135,6 +135,7 @@ class opticalPhase(initIsm):
             for iact in range(sgm_toa.shape[1]):
                 cs = interp1d(sgm_wv, sgm_toa[ialt,iact,:], fill_value=(0, 0), bounds_error=False)
                 sgm_inter = cs(wv_isrf_nm)
+                toa[ialt, iact] = sum(sgm_inter*isrf)
 
         return toa
 
