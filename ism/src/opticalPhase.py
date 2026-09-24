@@ -134,7 +134,7 @@ class opticalPhase(initIsm):
         for ialt in range(sgm_toa.shape[0]):
             for iact in range(sgm_toa.shape[1]):
                 cs = interp1d(sgm_wv, sgm_toa[ialt,iact,:], fill_value=(0, 0), bounds_error=False)
-                sgm_inter = cs(wv_isrf_nm)
+                sgm_inter = cs(wv_isrf)
                 toa[ialt, iact] = sum(sgm_inter*isrf)
 
         return toa
