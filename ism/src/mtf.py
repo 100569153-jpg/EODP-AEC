@@ -105,12 +105,13 @@ class mtf:
         fc = D / lambd * focal
         fn2D = f2D/(1/w)
         fr2D = f2D/(D/fc)
-        fnAct = (f/(1/w))
-        fnAlt = (f/(1/w))
+        fnAct = (fAct/(1/w))
+        fnAlt = (fAlt/(1/w))
 
-        # Los datos para comparar estan en EODP_TER_2021 en el zip, no estan en el codigo
+        # Los datos para comparar estan en EODP_TER_2021 en el zip, no estan en el codigo.
+        #Check fn2D y fr2D abriendo como array y comparando con sus valores
 
-    return fn2D, fr2D, fnAct, fnAlt
+        return fn2D, fr2D, fnAct, fnAlt
 
     def mtfDiffract(self,fr2D):
         """
