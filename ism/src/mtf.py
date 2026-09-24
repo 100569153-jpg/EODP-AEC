@@ -113,6 +113,7 @@ class mtf:
 
         return fn2D, fr2D, fnAct, fnAlt
 
+#Comparar tambien con sus datos
     def mtfDiffract(self,fr2D):
         """
         Optics Diffraction MTF
@@ -120,7 +121,13 @@ class mtf:
         :return: diffraction MTF
         """
         #TODO
+        fr = np.clip(fr2D, 0.0, 1.0)
+        Hdiff = (2.0 / np.pi) * (np.arccos(fr) - fr * np.sqrt(1.0 - fr ** 2))
+        Hdiff[fr2D > 1.0] = 0.0
         return Hdiff
+
+
+        # Other option: Hdiff = 2 / pi * (np.arccos(fr2D) - fr2D * np.sqrt(1 - fr2D ** 2))
 
 
     def mtfDefocus(self, fr2D, defocus, focal, D):
@@ -133,6 +140,13 @@ class mtf:
         :return: Defocus MTF
         """
         #TODO
+        x = np.pi * defocus * fr2D * (1.0 - fr2D)
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            Hdefoc = np.abs(2.0 * j1(x) / x)
+            Hdefoc[x == 0] = 1.0
+
+        Hdefoc[fr2D > 1.0] = 0.0
         return Hdefoc
 
     def mtfWfeAberrations(self, fr2D, lambd, kLF, wLF, kHF, wHF):
@@ -147,6 +161,11 @@ class mtf:
         :return: WFE Aberrations MTF
         """
         #TODO
+        opd_lf = (2.0 * np.pi / lambd) * (kLF * wLF * 2.0 * fr2D * (1.0 - fr2D))
+        opd_hf = (2.0 * np.pi / lambd) * (kHF * wHF)
+
+        Hwfe = np.exp(-(opd_lf ** 2 + opd_hf ** 2))
+        Hwfe[fr2D > 1.0] = 0.0
         return Hwfe
 
     def mtfDetector(self,fn2D):
@@ -156,6 +175,8 @@ class mtf:
         :return: detector MTF
         """
         #TODO
+        # np.sinc computes sin(pi*x)/(pi*x)
+        Hdet = np.abs(np.sinc(fn2D))
         return Hdet
 
     def mtfSmearing(self, fnAlt, ncolumns, ksmear):
@@ -167,6 +188,8 @@ class mtf:
         :return: Smearing MTF
         """
         #TODO
+        Hsmear_1d = np.abs(np.sinc(ksmear * fnAlt))
+        Hsmear = repmat(Hsmear_1d.reshape(-1, 1), 1, ncolumns)
         return Hsmear
 
     def mtfMotion(self, fn2D, kmotion):
@@ -177,6 +200,7 @@ class mtf:
         :return: detector MTF
         """
         #TODO
+        Hmotion = np.abs(np.sinc(kmotion * fn2D))
         return Hmotion
 
     def plotMtf(self,Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band):
