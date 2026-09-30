@@ -69,7 +69,7 @@ class mtf:
 
         # Calculate the System MTF
         self.logger.debug("Calculation of the Sysmtem MTF by multiplying the different contributors")
-        Hsys = Hsys = Hdiff * Hdefoc * Hwfe * Hdet * Hsmear * Hmotion
+        Hsys = Hdiff * Hdefoc * Hwfe * Hdet * Hsmear * Hmotion
 
         # Plot cuts ACT/ALT of the MTF
         self.plotMtf(Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band)
@@ -109,7 +109,7 @@ class mtf:
         fnAlt = (fAlt/(1/w))
 
         # Los datos para comparar estan en EODP_TER_2021 en el zip, no estan en el codigo.
-        #Check fn2D y fr2D abriendo como array y comparando con sus valores
+        # Check fn2D y fr2D abriendo como array y comparando con sus valores
 
         return fn2D, fr2D, fnAct, fnAlt
 
