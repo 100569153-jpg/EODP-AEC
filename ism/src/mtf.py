@@ -222,6 +222,74 @@ class mtf:
         :param band: band
         :return: N/A
         """
-        #TODO (Plotear figura 7-51)
+        #TODO (Plotear figura 7-51 y 7-52)
 
+        import matplotlib.pyplot as plt
+        import os
+
+        # Central line and column indices
+        idalt = int(nlines / 2)
+        idact = int(ncolumns / 2)
+
+        # Filter indices for frequencies up to Nyquist (0.0 <= f <= 0.5)
+        idx_act = np.where((fnAct >= 0.0) & (fnAct <= 0.5))[0]
+        idx_alt = np.where((fnAlt >= 0.0) & (fnAlt <= 0.5))[0]
+
+        # ---------------------------------------------------------------------
+        # Figure 7-51: System MTF - slice ACT
+        # ---------------------------------------------------------------------
+        def get_act_slice(mat):
+            return mat[idalt, idx_act] if mat.ndim == 2 else mat[idx_act]
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(fnAct[idx_act], get_act_slice(Hdiff), label='Diffraction MTF', linewidth=1.2)
+        plt.plot(fnAct[idx_act], get_act_slice(Hdefoc), label='Defocus MTF', linewidth=1.2)
+        plt.plot(fnAct[idx_act], get_act_slice(Hwfe), label='WFE Aberrations MTF', linewidth=1.2)
+        plt.plot(fnAct[idx_act], get_act_slice(Hdet), label='Detector MTF', linewidth=1.2)
+        plt.plot(fnAct[idx_act], get_act_slice(Hsmear), label='Smearing MTF', linewidth=1.2)
+        plt.plot(fnAct[idx_act], get_act_slice(Hmotion), label='Motion blur MTF', linewidth=1.2)
+        plt.plot(fnAct[idx_act], get_act_slice(Hsys), label='System MTF', color='black', linewidth=2.5)
+        plt.axvline(x=0.5, color='black', linestyle='--', linewidth=2, label='f Nyquist')
+
+        plt.title('System MTF - slice ACT', fontsize=14)
+        plt.xlabel('Spatial frequencies f/(1/w) [-]', fontsize=11)
+        plt.ylabel('MTF', fontsize=11)
+        plt.xlim([-0.01, 0.52])
+        plt.ylim([-0.05, 1.05])
+        plt.grid(True, which='both', linestyle='-', alpha=0.5)
+        plt.legend(loc='lower left', fontsize=9)
+
+        save_act = os.path.join(directory, f'system_mtf_act_{band}.png')
+        plt.savefig(save_act, bbox_inches='tight', dpi=150)
+        # plt.show()  # Uncomment if you want a pop-up window while running
+        plt.close()
+
+        # ---------------------------------------------------------------------
+        # Figure 7-52: System MTF - slice ALT
+        # ---------------------------------------------------------------------
+        def get_alt_slice(mat):
+            return mat[idx_alt, idact] if mat.ndim == 2 else mat[idx_alt]
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(fnAlt[idx_alt], get_alt_slice(Hdiff), label='Diffraction MTF', linewidth=1.2)
+        plt.plot(fnAlt[idx_alt], get_alt_slice(Hdefoc), label='Defocus MTF', linewidth=1.2)
+        plt.plot(fnAlt[idx_alt], get_alt_slice(Hwfe), label='WFE Aberrations MTF', linewidth=1.2)
+        plt.plot(fnAlt[idx_alt], get_alt_slice(Hdet), label='Detector MTF', linewidth=1.2)
+        plt.plot(fnAlt[idx_alt], get_alt_slice(Hsmear), label='Smearing MTF', linewidth=1.2)
+        plt.plot(fnAlt[idx_alt], get_alt_slice(Hmotion), label='Motion blur MTF', linewidth=1.2)
+        plt.plot(fnAlt[idx_alt], get_alt_slice(Hsys), label='System MTF', color='black', linewidth=2.5)
+        plt.axvline(x=0.5, color='black', linestyle='--', linewidth=2, label='f Nyquist')
+
+        plt.title('System MTF - slice ALT', fontsize=14)
+        plt.xlabel('Spatial frequencies f/(1/w) [-]', fontsize=11)
+        plt.ylabel('MTF', fontsize=11)
+        plt.xlim([-0.01, 0.52])
+        plt.ylim([-0.05, 1.05])
+        plt.grid(True, which='both', linestyle='-', alpha=0.5)
+        plt.legend(loc='lower left', fontsize=9)
+
+        save_alt = os.path.join(directory, f'system_mtf_alt_{band}.png')
+        plt.savefig(save_alt, bbox_inches='tight', dpi=150)
+        # plt.show()  # Uncomment if you want a pop-up window while running
+        plt.close()
 
