@@ -112,7 +112,7 @@ class detectionPhase(initIsm):
         e_photon = (h * c) / wv
 
         # Incident energy per pixel [Joules] (1e-3 converts mW/m2 to W/m2)
-        energy_pixel = (toa * 1e-3) * area_pix * tint
+        energy_pixel = ((toa/1000) * 1e-3) * area_pix * tint
 
         # Total photons = Energy / Photon energy
         toa_ph = energy_pixel / e_photon
@@ -145,6 +145,27 @@ class detectionPhase(initIsm):
         :return: toa in e- including bad & dead pixels
         """
         #TODO
+        toa[:, 5] = toa[:, 5] * (1 - bad_pix_red)
+        ncolumns = toa.shape[1]
+
+        # 1. Convert percentage [%] of affected detector columns into integer counts
+        nbad = int(np.round(ncolumns * (bad_pix / 100.0)))
+        ndead = int(np.round(ncolumns * (dead_pix / 100.0)))
+
+        # 2. Select distinct columns for bad and dead pixels (if percentage > 0)
+        if nbad > 0 or ndead > 0:
+            # Pick unique random column indices across the 150 columns
+            selected_cols = np.random.choice(ncolumns, size=nbad + ndead, replace=False)
+            bad_cols = selected_cols[:nbad]
+            dead_cols = selected_cols[nbad:]
+
+            # Apply signal reduction factor (1 - reduction) across all lines for bad pixels
+            for col in bad_cols:
+                toa[:, col] = toa[:, col] * (1.0 - bad_pix_red)
+
+            # Apply signal reduction factor for dead pixels (1 - 1.0 = 0 signal)
+            for col in dead_cols:
+                toa[:, col] = toa[:, col] * (1.0 - dead_pix_red)
         return toa
 
     def prnu(self, toa, kprnu):
@@ -163,7 +184,7 @@ class detectionPhase(initIsm):
 
         # 3. Apply time-invariant multiplicative gain across all lines: Ne-(:, act) = Ne-(:, act) * (1 + PRNU(act))
         toa_prnu = toa * (1.0 + prnu_factor)
-        
+
         return toa_prnu
 
 

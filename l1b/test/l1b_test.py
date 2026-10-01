@@ -17,6 +17,62 @@ dir_truth = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\input"
 
 bands = [0, 1, 2, 3]
 
+dir_teacher = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\output"
+
+
+# =========================================================================
+# Helper Function for File Comparison
+# =========================================================================
+def compare_folder_files(folder_path, folder_label):
+    print("\n" + "=" * 75)
+    print(f" CROSS-VALIDATION: {folder_label} vs. TEACHER OUTPUTS")
+    print("=" * 75)
+
+    if not os.path.exists(folder_path):
+        print(f"⚠️ Folder not found: {folder_path}")
+        return
+
+    nc_files = [f for f in os.listdir(folder_path) if f.endswith('.nc')]
+
+    if not nc_files:
+        print(f"No .nc files found in {folder_path}")
+        return
+
+    for file_name in sorted(nc_files):
+        file_user = os.path.join(folder_path, file_name)
+        file_teacher = os.path.join(dir_teacher, file_name)
+
+        if os.path.exists(file_teacher):
+            ds_user = nc.Dataset(file_user)
+            ds_teacher = nc.Dataset(file_teacher)
+
+            var_user = list(ds_user.variables.keys())[-1]
+            var_teacher = list(ds_teacher.variables.keys())[-1]
+
+            data_user = ds_user.variables[var_user][:]
+            data_teacher = ds_teacher.variables[var_teacher][:]
+
+            mae = np.mean(np.abs(data_user - data_teacher))
+            rmse = np.sqrt(np.mean((data_user - data_teacher) ** 2))
+            max_diff = np.max(np.abs(data_user - data_teacher))
+
+            status = "MATCH" if rmse < 1e-5 else "MISMATCH"
+            print(f"[{status}] {file_name}:")
+            print(f"    MAE: {mae:.6e} | RMSE: {rmse:.6e} | Max Diff: {max_diff:.6e}")
+
+            ds_user.close()
+            ds_teacher.close()
+        else:
+            print(f"[MISSING IN TEACHER DIR] {file_name}")
+
+
+# =========================================================================
+# STEP 1: Compare ALL files in BOTH user directories against teacher outputs
+# =========================================================================
+compare_folder_files(dir_equalized, "EQUALIZED FOLDER (output_AEC_equalized)")
+compare_folder_files(dir_no_equalized, "NO EQUALIZED FOLDER (output_AEC_no_equalized)")
+print("=" * 75 + "\n")
+
 # Create figure with 4 vertically stacked subplots
 fig, axes = plt.subplots(4, 1, figsize=(9, 12))
 
