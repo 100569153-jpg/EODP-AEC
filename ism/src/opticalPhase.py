@@ -93,6 +93,7 @@ class opticalPhase(initIsm):
         :return: TOA image in irradiances [mW/m2]
         """
         # TODO
+        toa = toa * (pi / 4.0) * ((D / f) ** 2) * Tr
         return toa
 
 
@@ -104,14 +105,15 @@ class opticalPhase(initIsm):
         :return: TOA image in irradiances [mW/m2]
         """
         # TODO
-        # 1. Transform spatial image to frequency domain & shift zero-frequency to center
-        toa_fft = fftshift(fft2(toa))
+        # 1. Convert TOA to frequency domain (zero frequency at [0,0])
+        GE = fft2(toa)
 
-        # 2. Multiply by system MTF filter
-        toa_filtered = toa_fft * Hsys
+        # 2 Shift Hsys so its center moves to [0,0] and multiply in frequency domain
+        GE_filtered = GE * fftshift(Hsys)
 
-        # 3. Shift back and compute inverse 2D FFT (take real part)
-        toa_ft = np.real(ifft2(fftshift(toa_filtered)))
+        # 3. Return to spatial domain and take only the real part
+        toa_ft = np.real(ifft2(GE_filtered))
+
         return toa_ft
 
     def spectralIntegration(self, sgm_toa, sgm_wv, band):

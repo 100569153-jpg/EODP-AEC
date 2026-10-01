@@ -222,6 +222,6 @@ class mtf:
         :param band: band
         :return: N/A
         """
-        #TODO
+        #TODO (Plotear figura 7-51)
 
 
