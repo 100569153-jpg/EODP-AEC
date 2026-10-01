@@ -145,27 +145,11 @@ class detectionPhase(initIsm):
         :return: toa in e- including bad & dead pixels
         """
         #TODO
+        #Apply bad pixel efficiency loss to column 5
         toa[:, 5] = toa[:, 5] * (1 - bad_pix_red)
-        ncolumns = toa.shape[1]
 
-        # 1. Convert percentage [%] of affected detector columns into integer counts
-        nbad = int(np.round(ncolumns * (bad_pix / 100.0)))
-        ndead = int(np.round(ncolumns * (dead_pix / 100.0)))
-
-        # 2. Select distinct columns for bad and dead pixels (if percentage > 0)
-        if nbad > 0 or ndead > 0:
-            # Pick unique random column indices across the 150 columns
-            selected_cols = np.random.choice(ncolumns, size=nbad + ndead, replace=False)
-            bad_cols = selected_cols[:nbad]
-            dead_cols = selected_cols[nbad:]
-
-            # Apply signal reduction factor (1 - reduction) across all lines for bad pixels
-            for col in bad_cols:
-                toa[:, col] = toa[:, col] * (1.0 - bad_pix_red)
-
-            # Apply signal reduction factor for dead pixels (1 - 1.0 = 0 signal)
-            for col in dead_cols:
-                toa[:, col] = toa[:, col] * (1.0 - dead_pix_red)
+        # Apply dead pixel efficiency loss to column 10
+        toa[:, 10] = toa[:, 10] * (1 - dead_pix_red)
         return toa
 
     def prnu(self, toa, kprnu):

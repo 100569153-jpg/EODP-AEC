@@ -56,6 +56,9 @@ class videoChainPhase(initIsm):
         :return: output toa in [V]
         """
         #TODO
+        #1. Convert electrons to readout node voltage [V] using Output Conversion Factor (OCF)
+        #2. Apply Analog-to-Digital Converter amplification gain
+        toa_v = toa * OCF * gain_adc
         return toa
 
     def digitisation(self, toa, bit_depth, min_voltage, max_voltage):
@@ -68,5 +71,16 @@ class videoChainPhase(initIsm):
         :return: toa in digital counts
         """
         #TODO
+        #1. Calculate maximum dynamic digital count value (e.g., 2^12 - 1 = 4095 for 12-bit)
+        max_dn = (2 ** bit_depth) - 1
+
+        # 2. Scale voltage range [min_voltage, max_voltage] linearly to digital counts [0, max_dn]
+        toa_dn = (toa - min_voltage) * (max_dn / (max_voltage - min_voltage))
+
+        # 3. Quantize voltage values to integer levels (floor truncation)
+        toa_dn = np.floor(toa_dn)
+
+        # 4. Saturate (clip) signal below min digital count (0) or above max digital count (max_dn)
+        toa_dn = np.clip(toa_dn, 0, max_dn)
         return toa_dn
 
