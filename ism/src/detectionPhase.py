@@ -105,6 +105,18 @@ class detectionPhase(initIsm):
         :return: Toa in photons
         """
         #TODO
+        h = self.constants.h_planck
+        c = self.constants.speed_light
+
+        # Single photon energy E = (h * c) / wavelength [Joules]
+        e_photon = (h * c) / wv
+
+        # Incident energy per pixel [Joules] (1e-3 converts mW/m2 to W/m2)
+        energy_pixel = (toa * 1e-3) * area_pix * tint
+
+        # Total photons = Energy / Photon energy
+        toa_ph = energy_pixel / e_photon
+
         return toa_ph
 
     def phot2Electr(self, toa, QE):
@@ -115,6 +127,11 @@ class detectionPhase(initIsm):
         :return: toa in electrons
         """
         #TODO
+        #1. Convert photons to electrons via Quantum Efficiency
+        toae = toa * QE
+
+        #2. Apply Full Well Capacity (FWC) saturation limit
+        toae = np.minimum(toae, self.ismConfig.FWC)
         return toae
 
     def badDeadPixels(self, toa,bad_pix,dead_pix,bad_pix_red,dead_pix_red):
@@ -138,7 +155,16 @@ class detectionPhase(initIsm):
         :return: TOA after adding PRNU [e-]
         """
         #TODO
-        return toa
+        #1. Standard normal distribution across all detector columns (150 pixels)
+        prnu_eff = np.random.normal(0, 1, toa.shape[1])
+
+        # 2. PRNU factor for each column: PRNU(act) = norm(0, 1) * kPRNU
+        prnu_factor = prnu_eff * kprnu
+
+        # 3. Apply time-invariant multiplicative gain across all lines: Ne-(:, act) = Ne-(:, act) * (1 + PRNU(act))
+        toa_prnu = toa * (1.0 + prnu_factor)
+        
+        return toa_prnu
 
 
     def darkSignal(self, toa, kdsnu, T, Tref, ds_A_coeff, ds_B_coeff):
@@ -153,4 +179,18 @@ class detectionPhase(initIsm):
         :return: TOA in [e-] with dark signal
         """
         #TODO
+        #1. Get number of detector columns (ACT direction)
+        ncolumns = toa.shape[1]
+
+        # 2. DSNU spatial component (positive modulus of standard normal distribution)
+        dsnu = np.abs(np.random.standard_normal(ncolumns)) * kdsnu
+
+        # 3. Mean dark signal thermal component (Sd)
+        sd = ds_A_coeff * ((T / Tref) ** 3) * np.exp(-ds_B_coeff * ((1.0 / T) - (1.0 / Tref)))
+
+        # 4. Total dark signal per column (time-invariant across all lines)
+        ds = sd * (1.0 + dsnu)
+
+        # 5. Add dark signal to the input electron image (additive noise)
+        toa_ds = toa + ds
         return toa
