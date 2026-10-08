@@ -85,7 +85,7 @@ class l1c(initL1c):
             (lat_l1c[ii], lon_l1c[ii]) = m.toLatLon(mgrs_tiles[ii])
             toa_l1c[ii] = bisplev(lat_l1c[ii], lon_l1c[ii], tck)
 
-        geopy.distance
+        #geopy.distance
         luss = 1
         return lat_l1c, lon_l1c, toa_l1c
 
