@@ -5,9 +5,12 @@ from l1b.src.initL1b import initL1b
 from common.io.writeToa import writeToa, readToa
 from common.src.auxFunc import getIndexBand
 from common.io.readFactor import readFactor, EQ_MULT, EQ_ADD, NC_EXT
+from common.plot.plotF import plotF
+from common.plot.plotMat2D import plotMat2D
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+
 
 class l1b(initL1b):
 
@@ -81,4 +84,13 @@ class l1b(initL1b):
 
     def plotL1bToa(self, toa_l1b, outputdir, band):
         #TODO
-        a=1 # dummy
+        #a=1 # dummy
+        # 2D image of the L1B TOA
+        title_str = 'L1B TOA ' + band + ' [mW/m2/sr]'
+        saveas_str = self.globalConfig.l1b_toa + band
+        plotMat2D(toa_l1b, title_str, 'ACT', 'ALT', outputdir, saveas_str)
+
+        # Central ALT line (same as in the ISM plots)
+        idalt = int(toa_l1b.shape[0] / 2)
+        saveas_str = saveas_str + '_alt' + str(idalt)
+        plotF([], toa_l1b[idalt, :], title_str, 'ACT pixel [-]', 'TOA [mW/m2/sr]', outputdir, saveas_str)

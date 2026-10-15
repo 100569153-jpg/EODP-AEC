@@ -8,123 +8,74 @@ import netCDF4 as nc
 import numpy as np
 import matplotlib.pyplot as plt
 
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from common.io.writeToa import readToa
 # =========================================================================
 # Directory Configurations
 # =========================================================================
-dir_equalized = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\output_AEC_equalized"
-dir_no_equalized = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\output_AEC_no_equalized"
-dir_truth = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\input"
+dir_eq = r"C:/Users/alexe/Downloads/EODP/EODP_TER_2021/EODP-TS-L1B/output_AEC_equalized"
+dir_no_eq = r"C:/Users/alexe/Downloads/EODP/EODP_TER_2021/EODP-TS-L1B/output_AEC_no_equalized"
+dir_ref = r"C:/Users/alexe/Downloads/EODP/EODP_TER_2021/EODP-TS-L1B/output"
+dir_isrf = r"C:/Users/alexe/Downloads/EODP/EODP_TER_2021/EODP-TS-L1B/input"
+dir_fig = r"C:/Users/alexe/Downloads/EODP/EODP_TER_2021/EODP-TS-L1B/figures_AEC"
+bands = ['VNIR-0', 'VNIR-1', 'VNIR-2', 'VNIR-3']
+threshold = 1e-3  # [%] maximum relative difference allowed (guide to the subject)
 
-bands = [0, 1, 2, 3]
+if not os.path.isdir(dir_fig):
+    os.makedirs(dir_fig)
+# =========================================================================
+# Cross validation with the reference outputs (teacher ones)
+# =========================================================================
+results = []
+for band in bands:
+    for name in ['l1b_toa_eq_', 'l1b_toa_']:
+        toa_mine = readToa(dir_eq, name + band + '.nc')
+        toa_ref = readToa(dir_ref, name + band + '.nc')
 
-dir_teacher = r"C:\Users\alexe\Downloads\EODP\EODP_TER_2021\EODP-TS-L1B\output"
+        # Relative difference in % (avoid dividing by zero)
+        diff = np.abs(toa_mine - toa_ref)
+        rel_diff = np.zeros(diff.shape)
+        mask = toa_ref != 0
+        rel_diff[mask] = diff[mask] / np.abs(toa_ref[mask]) * 100
 
+        # Points below the threshold, and the 3-sigma value of the relative difference
+        perc_ok = np.sum(rel_diff < threshold) / rel_diff.size * 100
+        rel_3sigma = np.mean(rel_diff) + 3 * np.std(rel_diff)
+        result = 'PASS' if np.max(rel_diff) < threshold else 'FAIL'
+
+        line = (name + band + ': max abs diff = ' + '%.3e' % np.max(diff) +
+                ', max rel diff = ' + '%.3e' % np.max(rel_diff) + ' %' +
+                ', 3-sigma rel diff = ' + '%.3e' % rel_3sigma + ' %' +
+                ', points < ' + str(threshold) + '% = ' + '%.2f' % perc_ok + ' %  -> ' + result)
+        print(line)
+        results.append(line)
+
+with open(os.path.join(dir_fig, 'l1b_crossvalidation.txt'), 'w') as f:
+    f.write('\n'.join(results))
 
 # =========================================================================
-# Helper Function for File Comparison
+# Plot equalized vs not equalizaed vs TOA after the ISRF (Central ALT lien)
 # =========================================================================
-def compare_folder_files(folder_path, folder_label):
-    print("\n" + "=" * 75)
-    print(f" CROSS-VALIDATION: {folder_label} vs. TEACHER OUTPUTS")
-    print("=" * 75)
 
-    if not os.path.exists(folder_path):
-        print(f"⚠️ Folder not found: {folder_path}")
-        return
+for band in bands:
+    toa_eq = readToa(dir_eq, 'l1b_toa_' + band + '.nc')
+    toa_no_eq = readToa(dir_no_eq, 'l1b_toa_' + band + '.nc')
+    toa_isrf = readToa(dir_isrf, 'ism_toa_isrf_' + band + '.nc')
 
-    nc_files = [f for f in os.listdir(folder_path) if f.endswith('.nc')]
+    idalt = int(toa_eq.shape[0] / 2)
 
-    if not nc_files:
-        print(f"No .nc files found in {folder_path}")
-        return
-
-    for file_name in sorted(nc_files):
-        file_user = os.path.join(folder_path, file_name)
-        file_teacher = os.path.join(dir_teacher, file_name)
-
-        if os.path.exists(file_teacher):
-            ds_user = nc.Dataset(file_user)
-            ds_teacher = nc.Dataset(file_teacher)
-
-            var_user = list(ds_user.variables.keys())[-1]
-            var_teacher = list(ds_teacher.variables.keys())[-1]
-
-            data_user = ds_user.variables[var_user][:]
-            data_teacher = ds_teacher.variables[var_teacher][:]
-
-            mae = np.mean(np.abs(data_user - data_teacher))
-            rmse = np.sqrt(np.mean((data_user - data_teacher) ** 2))
-            max_diff = np.max(np.abs(data_user - data_teacher))
-
-            status = "MATCH" if rmse < 1e-5 else "MISMATCH"
-            print(f"[{status}] {file_name}:")
-            print(f"    MAE: {mae:.6e} | RMSE: {rmse:.6e} | Max Diff: {max_diff:.6e}")
-
-            ds_user.close()
-            ds_teacher.close()
-        else:
-            print(f"[MISSING IN TEACHER DIR] {file_name}")
-
-
-# =========================================================================
-# STEP 1: Compare ALL files in BOTH user directories against teacher outputs
-# =========================================================================
-compare_folder_files(dir_equalized, "EQUALIZED FOLDER (output_AEC_equalized)")
-compare_folder_files(dir_no_equalized, "NO EQUALIZED FOLDER (output_AEC_no_equalized)")
-print("=" * 75 + "\n")
-
-# Create figure with 4 vertically stacked subplots
-fig, axes = plt.subplots(4, 1, figsize=(9, 12))
-
-for idx, band in enumerate(bands):
-    # File path constructions
-    file_eq = os.path.join(dir_equalized, f"l1b_toa_VNIR-{band}.nc")
-    file_no_eq = os.path.join(dir_no_equalized, f"l1b_toa_VNIR-{band}.nc")
-    file_truth = os.path.join(dir_truth, f"ism_toa_isrf_VNIR-{band}.nc")
-
-    # Fallback naming checks for output files
-    if not os.path.exists(file_eq):
-        file_eq = os.path.join(dir_equalized, f"l1b_toa_eq_VNIR-{band}.nc")
-    if not os.path.exists(file_no_eq):
-        file_no_eq = os.path.join(dir_no_equalized, f"l1b_toa_eq_VNIR-{band}.nc")
-
-    if not (os.path.exists(file_eq) and os.path.exists(file_no_eq) and os.path.exists(file_truth)):
-        print(f"⚠️ Missing required file(s) for Band VNIR-{band}:")
-        if not os.path.exists(file_truth):
-            print(f"   - Truth file missing: {file_truth}")
-        continue
-
-    # Load NetCDF datasets
-    ds_eq = nc.Dataset(file_eq)
-    ds_no_eq = nc.Dataset(file_no_eq)
-    ds_truth = nc.Dataset(file_truth)
-
-    # Extract data matrices
-    data_eq = ds_eq.variables[list(ds_eq.variables.keys())[-1]][:]
-    data_no_eq = ds_no_eq.variables[list(ds_no_eq.variables.keys())[-1]][:]
-    data_truth = ds_truth.variables[list(ds_truth.variables.keys())[-1]][:]
-
-    # Extract line 0 (toa_truth[i][0])
-    line_eq = data_eq[0] if data_eq.ndim >= 2 else data_eq
-    line_no_eq = data_no_eq[0] if data_no_eq.ndim >= 2 else data_no_eq
-    line_truth = data_truth[0] if data_truth.ndim >= 2 else data_truth
-
-    # Plot on corresponding subplot
-    ax = axes[idx]
-    ax.plot(line_truth, label="Truth", color="#1f77b4", linewidth=1.5)        # Blue
-    ax.plot(line_eq, label="Equalizer", color="#ff7f0e", linewidth=1.2)       # Orange
-    ax.plot(line_no_eq, label="Not Equalizer", color="#2ca02c", linewidth=1.2) # Green
-
-    ax.set_title(f"VNIR-{band}", fontsize=11, fontweight="bold")
-    ax.set_xlabel("Sample", fontsize=9)
-    ax.set_ylabel("TOA", fontsize=9)
-    ax.grid(True, linestyle="-", linewidth=0.5, alpha=0.7)
-    ax.legend(loc="upper left", fontsize=8)
-
-    # Close NetCDF files
-    ds_eq.close()
-    ds_no_eq.close()
-    ds_truth.close()
-
-plt.tight_layout()
-plt.show()
+    fig = plt.figure(figsize=(10, 7))
+    plt.plot(toa_isrf[idalt, :], '-b', label='TOA after the ISRF')
+    plt.plot(toa_no_eq[idalt, :], '-g', label='L1B TOA without equalization')
+    plt.plot(toa_eq[idalt, :], '-r', label='L1B TOA with equalization')
+    plt.title('Effect of the equalization for ' + band + ' (ALT line ' + str(idalt) + ')', fontsize=16)
+    plt.xlabel('ACT pixel [-]', fontsize=14)
+    plt.ylabel('TOA [mW/m2/sr]', fontsize=14)
+    plt.legend()
+    plt.grid()
+    saveas = os.path.join(dir_fig, 'l1b_equalization_' + band + '.png')
+    plt.savefig(saveas)
+    plt.close(fig)
+    print('Saved image ' + saveas)
