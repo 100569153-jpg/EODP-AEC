@@ -264,7 +264,7 @@ class mtf:
         plt.grid(True, which='both', linestyle='-', alpha=0.5)
         plt.legend(loc='lower left', fontsize=9)
 
-        save_act = os.path.join(directory, f'system_mtf_act_{band}.png')
+        save_act = os.path.join(directory, f'system_mtf_cutAct_{band}.png')
         plt.savefig(save_act, bbox_inches='tight', dpi=150)
         # plt.show()  # Uncomment if you want a pop-up window while running
         plt.close()
@@ -293,7 +293,7 @@ class mtf:
         plt.grid(True, which='both', linestyle='-', alpha=0.5)
         plt.legend(loc='lower left', fontsize=9)
 
-        save_alt = os.path.join(directory, f'system_mtf_alt_{band}.png')
+        save_alt = os.path.join(directory, f'system_mtf_cutAlt_{band}.png')
         plt.savefig(save_alt, bbox_inches='tight', dpi=150)
         # plt.show()  # Uncomment if you want a pop-up window while running
         plt.close()
