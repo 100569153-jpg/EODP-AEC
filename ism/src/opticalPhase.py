@@ -112,7 +112,9 @@ class opticalPhase(initIsm):
         GE_filtered = GE * fftshift(Hsys)
 
         # 3. Return to spatial domain and take only the real part
-        toa_ft = np.real(ifft2(GE_filtered))
+        toa_c = ifft2(GE_filtered)
+        self.logger.debug("Max imaginary part after the MTF " + str(np.max(np.abs(np.imag(toa_c)))))
+        toa_ft = np.real(toa_c)
 
         return toa_ft
 

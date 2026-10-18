@@ -70,6 +70,15 @@ class mtf:
         # Calculate the System MTF
         self.logger.debug("Calculation of the Sysmtem MTF by multiplying the different contributors")
         Hsys = Hdiff * Hdefoc * Hwfe * Hdet * Hsmear * Hmotion
+        # Save all the MTFs to file
+        if self.ismConfig.save_mtfs:
+            writeMat(directory, 'Hdiff_' + band, Hdiff)
+            writeMat(directory, 'Hdefoc_' + band, Hdefoc)
+            writeMat(directory, 'Hwfe_' + band, Hwfe)
+            writeMat(directory, 'Hdet_' + band, Hdet)
+            writeMat(directory, 'Hsmear_' + band, Hsmear)
+            writeMat(directory, 'Hmotion_' + band, Hmotion)
+            writeMat(directory, 'Hsys_' + band, Hsys)
 
         # Plot cuts ACT/ALT of the MTF
         self.plotMtf(Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band)
@@ -102,9 +111,9 @@ class mtf:
         [fAltxx, fActxx] = np.meshgrid(fAlt, fAct,indexing='ij')  # Please use ‘ij’ indexing or you will get the transpose
         f2D = np.sqrt(fAltxx * fAltxx + fActxx * fActxx)
 
-        fc = D / lambd * focal
-        fn2D = f2D/(1/w)
-        fr2D = f2D/(D/fc)
+        fc = D / (lambd * focal)  # optics cut-off frequency [1/m] (ATBD 7.1.3.7)
+        fn2D = f2D / (1 / w)  # normalised frequencies (f/(1/w))
+        fr2D = f2D / fc  # relative frequencies (f/fc)
         fnAct = (fAct/(1/w))
         fnAlt = (fAlt/(1/w))
 
@@ -250,6 +259,7 @@ class mtf:
         plt.plot(fnAct[idx_act], get_act_slice(Hmotion), label='Motion blur MTF', linewidth=1.2)
         plt.plot(fnAct[idx_act], get_act_slice(Hsys), label='System MTF', color='black', linewidth=2.5)
         plt.axvline(x=0.5, color='black', linestyle='--', linewidth=2, label='f Nyquist')
+        save_act = os.path.join(directory, f'system_mtf_cutAct_{band}.png')
 
         plt.title('System MTF - slice ACT', fontsize=14)
         plt.xlabel('Spatial frequencies f/(1/w) [-]', fontsize=11)
@@ -279,6 +289,7 @@ class mtf:
         plt.plot(fnAlt[idx_alt], get_alt_slice(Hmotion), label='Motion blur MTF', linewidth=1.2)
         plt.plot(fnAlt[idx_alt], get_alt_slice(Hsys), label='System MTF', color='black', linewidth=2.5)
         plt.axvline(x=0.5, color='black', linestyle='--', linewidth=2, label='f Nyquist')
+        save_alt = os.path.join(directory, f'system_mtf_cutAlt_{band}.png')
 
         plt.title('System MTF - slice ALT', fontsize=14)
         plt.xlabel('Spatial frequencies f/(1/w) [-]', fontsize=11)
@@ -293,3 +304,6 @@ class mtf:
         # plt.show()  # Uncomment if you want a pop-up window while running
         plt.close()
 
+
+        # 2D System MTF
+        plotMat2D(Hsys, 'System MTF ' + band, 'ACT', 'ALT', directory, 'system_mtf_2d_' + band)
