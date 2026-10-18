@@ -9,8 +9,8 @@ import numpy as np
 from scipy.interpolate import bisplrep, bisplev
 import matplotlib.pyplot as plt
 from common.io.l1cProduct import writeL1c
-from matplotlib import cm
-import geopy
+import os
+import sys
 
 class l1c(initL1c):
 
@@ -70,7 +70,7 @@ class l1c(initL1c):
 
         for ii in range (toa.shape[0]): #100
             for jj in range (toa.shape[1]):  # 150
-                auxi = m.toMGRS(lat[ii, jj], lon[ii, jj], MGRSPrecision=self.l1cConfig.mgrs_tile_precision)
+                auxi = str(m.toMGRS(lat[ii, jj], lon[ii, jj], MGRSPrecision=self.l1cConfig.mgrs_tile_precision))
                 mgrs_tiles.add(auxi)
 
         mgrs_tiles = list(mgrs_tiles)
@@ -79,14 +79,13 @@ class l1c(initL1c):
         lat_l1c = np.zeros(len(mgrs_tiles))
         lon_l1c = np.zeros(len(mgrs_tiles))
 
-        tck = bisplrep(lat, lon, toa)
-
         for ii in range (len(mgrs_tiles)):
-            (lat_l1c[ii], lon_l1c[ii]) = m.toLatLon(mgrs_tiles[ii])
+            (lat_l1c[ii], lon_l1c[ii]) = m.toLatLon(mgrs_tiles[ii], inDegrees=True)
             toa_l1c[ii] = bisplev(lat_l1c[ii], lon_l1c[ii], tck)
 
-        #geopy.distance
-        luss = 1
+        # Plot the L1B and L1C grids and the L1C TOA
+        if self.l1cConfig.plotL1cGrid:
+            self.plotL1cGrid(lat, lon, lat_l1c, lon_l1c, toa_l1c, band)
         return lat_l1c, lon_l1c, toa_l1c
 
     def checkSize(self, lat,toa):
@@ -98,3 +97,34 @@ class l1c(initL1c):
         :return: NA
         '''
         #TODO
+        if lat.shape != toa.shape:
+            self.logger.error("Sizes of the geodetic coordinates " + str(lat.shape) +
+                              " and the TOA " + str(toa.shape) + " do not match")
+            sys.exit(1)
+
+    def plotL1cGrid(self, lat, lon, lat_l1c, lon_l1c, toa_l1c, band):
+        '''
+        Plot of the L1B (irregular) and L1C (MGRS) grids and of the L1C TOA
+        '''
+        # L1B and L1C grids in the same plot
+        fig = plt.figure(figsize=(10, 7))
+        plt.plot(lon.flatten(), lat.flatten(), '.b', markersize=2, label='L1B grid')
+        plt.plot(lon_l1c, lat_l1c, '.r', markersize=2, label='L1C grid (MGRS 100 m)')
+        plt.title('L1B and L1C grids ' + band, fontsize=16)
+        plt.xlabel('Longitude [deg]', fontsize=14)
+        plt.ylabel('Latitude [deg]', fontsize=14)
+        plt.legend()
+        plt.grid()
+        plt.savefig(os.path.join(self.outdir, 'l1b_l1c_grids_' + band + '.png'))
+        plt.close(fig)
+
+        # L1C TOA
+        fig = plt.figure(figsize=(10, 7))
+        sc = plt.scatter(lon_l1c, lat_l1c, c=toa_l1c, s=4, cmap='jet')
+        plt.colorbar(sc, label='TOA [mW/m2/sr]')
+        plt.title('L1C TOA ' + band, fontsize=16)
+        plt.xlabel('Longitude [deg]', fontsize=14)
+        plt.ylabel('Latitude [deg]', fontsize=14)
+        plt.grid()
+        plt.savefig(os.path.join(self.outdir, 'l1c_toa_' + band + '.png'))
+        plt.close(fig)
