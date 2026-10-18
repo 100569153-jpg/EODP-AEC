@@ -1,6 +1,4 @@
-ISM
-UNITARY
-TEST
+#ISM UNITARY TEST
 # 1. Cross validation of ALL my ISM outputs (isrf, optical, MTFs, detection, vcu, final DN) with the teacher outputs
 # 2. Unit conversion: factors from radiance to DN and the value of the pixel [50,75] for the 4 bands,
 #    compared with my outputs
