@@ -171,11 +171,7 @@ class mtf:
         :return: WFE Aberrations MTF
         """
         #TODO
-        opd_lf = (2.0 * np.pi / lambd) * (kLF * wLF * 2.0 * fr2D * (1.0 - fr2D))
-        opd_hf = (2.0 * np.pi / lambd) * (kHF * wHF)
-
-        Hwfe = np.exp(-(opd_lf ** 2 + opd_hf ** 2))
-        Hwfe[fr2D > 1.0] = 0.0
+        Hwfe = np.exp(-fr2D * (1.0 - fr2D) * (kLF * (wLF / lambd) ** 2 + kHF * (wHF / lambd) ** 2))
         return Hwfe
 
     def mtfDetector(self,fn2D):
@@ -259,7 +255,6 @@ class mtf:
         plt.plot(fnAct[idx_act], get_act_slice(Hmotion), label='Motion blur MTF', linewidth=1.2)
         plt.plot(fnAct[idx_act], get_act_slice(Hsys), label='System MTF', color='black', linewidth=2.5)
         plt.axvline(x=0.5, color='black', linestyle='--', linewidth=2, label='f Nyquist')
-        save_act = os.path.join(directory, f'system_mtf_cutAct_{band}.png')
 
         plt.title('System MTF - slice ACT', fontsize=14)
         plt.xlabel('Spatial frequencies f/(1/w) [-]', fontsize=11)
@@ -289,7 +284,6 @@ class mtf:
         plt.plot(fnAlt[idx_alt], get_alt_slice(Hmotion), label='Motion blur MTF', linewidth=1.2)
         plt.plot(fnAlt[idx_alt], get_alt_slice(Hsys), label='System MTF', color='black', linewidth=2.5)
         plt.axvline(x=0.5, color='black', linestyle='--', linewidth=2, label='f Nyquist')
-        save_alt = os.path.join(directory, f'system_mtf_cutAlt_{band}.png')
 
         plt.title('System MTF - slice ALT', fontsize=14)
         plt.xlabel('Spatial frequencies f/(1/w) [-]', fontsize=11)

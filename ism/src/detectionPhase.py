@@ -1,6 +1,7 @@
 
 from ism.src.initIsm import initIsm
 import numpy as np
+import os
 from common.io.writeToa import writeToa
 from common.plot.plotMat2D import plotMat2D
 from common.plot.plotF import plotF
@@ -111,8 +112,8 @@ class detectionPhase(initIsm):
         # Single photon energy E = (h * c) / wavelength [Joules]
         e_photon = (h * c) / wv
 
-        # Incident energy per pixel [Joules] (1e-3 converts mW/m2 to W/m2)
-        energy_pixel = ((toa/1000) * 1e-3) * area_pix * tint
+        # Incident energy per pixel [Joules] (/1000 converts mW/m2 to W/m2)
+        energy_pixel = (toa/1000) * area_pix * tint
 
         # Total photons = Energy / Photon energy
         toa_ph = energy_pixel / e_photon
@@ -145,11 +146,31 @@ class detectionPhase(initIsm):
         :return: toa in e- including bad & dead pixels
         """
         #TODO
-        #Apply bad pixel efficiency loss to column 5
-        toa[:, 5] = toa[:, 5] * (1 - bad_pix_red)
+        #1. Number of bad and dead pixels (int() as indicated in the ATBD)
+        ncolumns = toa.shape[1]
+        n_bad = int(ncolumns * bad_pix / 100)
+        n_dead = int(ncolumns * dead_pix / 100)
 
-        # Apply dead pixel efficiency loss to column 10
-        toa[:, 10] = toa[:, 10] * (1 - dead_pix_red)
+        # 2. Evenly distributed in the CCD
+        idx_bad = []
+        idx_dead = []
+        if n_bad > 0:
+            step_bad = int(ncolumns / n_bad)
+            idx_bad = list(range(5, ncolumns, step_bad))
+        if n_dead > 0:
+            step_dead = int(ncolumns / n_dead)
+            idx_dead = list(range(0, ncolumns, step_dead))
+
+        self.logger.debug("Bad pixels: " + str(idx_bad) + " - Dead pixels: " + str(idx_dead))
+
+        # 3. Apply the reduction of the signal
+        toa[:, idx_bad] = toa[:, idx_bad] * (1 - bad_pix_red)
+        toa[:, idx_dead] = toa[:, idx_dead] * (1 - dead_pix_red)
+
+        # 4. Save the indexes for validation
+        with open(os.path.join(self.outdir, 'bad_dead_pixels.txt'), 'w') as f:
+            f.write('Bad pixels: ' + str(idx_bad) + '\n')
+            f.write('Dead pixels: ' + str(idx_dead) + '\n')
         return toa
 
     def prnu(self, toa, kprnu):
@@ -198,4 +219,4 @@ class detectionPhase(initIsm):
 
         # 5. Add dark signal to the input electron image (additive noise)
         toa_ds = toa + ds
-        return toa
+        return toa_ds
