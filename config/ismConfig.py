@@ -10,7 +10,7 @@ class ismConfig:
         #--------------------------------------------------------------------------------
         # CCD
         self.pix_size = 42e-6                    # [m] Pixel size in microns for the MS channels. We changed the first 4 values in the last class
-        self.t_int = 0.00428                     # [s] Integration time
+        self.t_int = 0.0428                     # [s] Integration time
 
         # Optical system
         self.D = 0.07565                           # [m] Telescope pupil diameter
